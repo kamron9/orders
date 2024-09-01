@@ -3,9 +3,32 @@ import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react'
 export const orderApi = createApi({
 	reducerPath: 'orderApi',
 	baseQuery: fetchBaseQuery({ baseUrl: 'http://localhost:5000/api' }), // Sizning backend URL
+	tagTypes: ['Order'],
 	endpoints: builder => ({
 		getOrders: builder.query({
-			query: () => '/orders',
+			query: ({
+				search,
+				status,
+				sortField,
+				sortOrder,
+				page,
+				limit,
+				startDate,
+				endDate,
+			}) => ({
+				url: '/orders',
+				params: {
+					search: search,
+					status,
+					sortField,
+					sortOrder,
+					page,
+					limit,
+					startDate,
+					endDate,
+				},
+			}),
+			providesTags: () => ['Order'],
 		}),
 		getOrderById: builder.query({
 			query: id => `/orders/${id}`,
@@ -16,6 +39,7 @@ export const orderApi = createApi({
 				method: 'POST',
 				body: newOrder,
 			}),
+			invalidatesTags: ['Order'],
 		}),
 		updateOrder: builder.mutation({
 			query: ({ id, ...updatedOrder }) => ({
@@ -23,12 +47,14 @@ export const orderApi = createApi({
 				method: 'PUT',
 				body: updatedOrder,
 			}),
+			invalidatesTags: ['Order'],
 		}),
 		deleteOrder: builder.mutation({
 			query: id => ({
 				url: `/orders/${id}`,
 				method: 'DELETE',
 			}),
+			invalidatesTags: ['Order'],
 		}),
 	}),
 })

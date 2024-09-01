@@ -15,6 +15,7 @@ import { useState } from 'react'
 import { IOrders } from '.'
 import { useModal } from '../../context/ModalProvider'
 import { formatDate } from '../../utils/formatDate'
+import RemoveOrderModal from '../RemovOrderModal'
 
 interface Istatus {
 	text: string
@@ -30,6 +31,11 @@ interface Istatus {
 
 const Row = ({ row }: { row: IOrders }) => {
 	const [openRow, setOpenRow] = useState<boolean>(false)
+	const [openRemoveModal, setOpenRemoveModal] = useState<boolean>(false)
+	const productTitle =
+		row.productTitle.length > 30
+			? row.productTitle.slice(0, 30)
+			: row.productTitle
 	const { openModal } = useModal()
 	const generateStatus = (status: string): Istatus => {
 		switch (status) {
@@ -44,6 +50,14 @@ const Row = ({ row }: { row: IOrders }) => {
 		}
 	}
 
+	
+
+	const handleOpen = () => {
+		setOpenRemoveModal(true)
+	}
+	const hadleClose = () => {
+		setOpenRemoveModal(false)
+	}
 	const onEditData = () => {
 		openModal(row)
 	}
@@ -65,7 +79,7 @@ const Row = ({ row }: { row: IOrders }) => {
 						{openRow ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />}
 					</IconButton>
 				</TableCell>
-				<TableCell component={'th'}>{row.productTitle}</TableCell>
+				<TableCell component={'th'}>{productTitle}</TableCell>
 				<TableCell>
 					<Chip
 						label={generateStatus(row.status).text}
@@ -76,13 +90,19 @@ const Row = ({ row }: { row: IOrders }) => {
 				<TableCell>{row.price.toLocaleString('ru')} сум</TableCell>
 				<TableCell align='center'>{row.orderId}</TableCell>
 
-				<TableCell>
+				<TableCell sx={{ display: 'flex', gap: '5px' }}>
 					<IconButton onClick={onEditData}>
 						<EditIcon />
 					</IconButton>
-					<IconButton color='error'>
-						<DeleteOutlineIcon />
-					</IconButton>
+					<RemoveOrderModal
+						open={openRemoveModal}
+						handleClose={hadleClose}
+						id={row._id}
+					>
+						<IconButton color='error' onClick={handleOpen}>
+							<DeleteOutlineIcon />
+						</IconButton>
+					</RemoveOrderModal>
 				</TableCell>
 			</TableRow>
 
@@ -94,6 +114,12 @@ const Row = ({ row }: { row: IOrders }) => {
 						timeout='auto'
 						unmountOnExit
 					>
+						<Box display={'flex'} alignItems={'center'} gap={'10px'}>
+							<Typography component={'h3'} fontWeight={600}>
+								Название продукта
+							</Typography>
+							<span>{row.productTitle}</span>
+						</Box>
 						<Box display={'flex'} alignItems={'center'} gap={'10px'}>
 							<Typography component={'h3'} fontWeight={600}>
 								Время получения:

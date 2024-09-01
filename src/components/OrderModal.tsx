@@ -1,5 +1,6 @@
 import CloseIcon from '@mui/icons-material/Close'
 import {
+	CircularProgress,
 	FormControl,
 	IconButton,
 	InputLabel,
@@ -12,11 +13,13 @@ import Box from '@mui/material/Box'
 import Button from '@mui/material/Button'
 import Modal from '@mui/material/Modal'
 import { useEffect, useState } from 'react'
+import { SubmitHandler, useForm } from 'react-hook-form'
 import { useModal } from '../context/ModalProvider'
 import {
 	useAddOrderMutation,
 	useUpdateOrderMutation,
 } from '../service/apiSlice'
+
 const style = {
 	position: 'absolute',
 	top: '50%',
@@ -28,106 +31,126 @@ const style = {
 	p: 2,
 }
 
-const OrderModal = () => {
-	const { open, openModal, closeModal, data } = useModal()
-	const [addOrder, { isLoading, isSuccess, isError, error }] =
-		useAddOrderMutation()
+interface Inputs {
+	productTitle: string
+	price: string
+	status: string
+	count: string
+	details: string
+}
 
+const OrderModal = () => {
+	const { open, closeModal, data } = useModal()
+	const [addOrder, { isLoading }] = useAddOrderMutation()
 	const [openSnackBar, setOpenSnackBar] = useState(false)
 	const [message, setMessage] = useState('')
 	const [updateOrder] = useUpdateOrderMutation()
-	const handleOpen = () => openModal({} as any)
-	const handleClose = () => closeModal()
-	const [productTitle, setProductTitle] = useState('')
-	const [price, setPrice] = useState('')
-	const [status, setStatus] = useState('pending')
-	const [count, setCount] = useState('')
-	const [details, setDetails] = useState('')
+
+	const {
+		register,
+		handleSubmit,
+		reset,
+		formState: { errors },
+	} = useForm<Inputs>({
+		defaultValues: {
+			productTitle: data?.productTitle || '',
+			price: data?.price?.toString() || '',
+			status: data?.status || 'pending',
+			count: data?.count?.toString() || '',
+			details: data?.details || '',
+		},
+	})
 
 	const handleCloseSnackBar = () => {
 		setOpenSnackBar(false)
 		setMessage('')
 	}
 
-	const handleSubmit = async (event: React.FormEvent) => {
-		event.preventDefault()
+	const onSubmit: SubmitHandler<Inputs> = async values => {
 		try {
-			if (Object.keys(data as {}).length) {
+			if (data?._id) {
 				await updateOrder({
-					id: data?._id,
-					productTitle,
-					price: +price,
-					status,
-					count: +count,
-					details,
+					id: data._id,
+					productTitle: values.productTitle,
+					price: +values.price,
+					status: values.status,
+					count: +values.count,
+					details: values.details,
 				}).unwrap()
 				setMessage('Заказ успешно изменен')
 			} else {
 				await addOrder({
-					productTitle,
-					price: +price,
-					status,
-					count: +count,
-					details,
+					productTitle: values.productTitle,
+					price: +values.price,
+					status: values.status,
+					count: +values.count,
+					details: values.details,
 				}).unwrap()
 				setMessage('Заказ добавлен')
 			}
 			setOpenSnackBar(true)
 			closeModal()
+			reset()
 		} catch (error: any) {
 			setMessage(error.message || 'Ошибка')
 			setOpenSnackBar(true)
 		}
 	}
+
 	useEffect(() => {
 		if (data) {
-			setProductTitle(data.productTitle || '')
-			setPrice(data.price?.toString() || '')
-			setStatus(data.status || 'pending')
-			setCount(data.count?.toString() || '')
-			setDetails(data.details || '')
+			reset({
+				productTitle: data.productTitle || '',
+				price: data.price?.toString() || '',
+				status: data.status || 'pending',
+				count: data.count?.toString() || '',
+				details: data.details || '',
+			})
 		}
-	}, [data])
+	}, [data, reset])
+
 	return (
 		<div>
-			<Button onClick={handleOpen}>Добавить заказ</Button>
 			<Modal
 				open={open}
-				onClose={handleClose}
+				onClose={closeModal}
 				aria-labelledby='modal-modal-title'
 				aria-describedby='modal-modal-description'
 			>
 				<Box sx={style}>
 					<Box display={'flex'} justifyContent={'end'} mb={'10px'}>
-						<IconButton onClick={handleClose}>
+						<IconButton onClick={closeModal}>
 							<CloseIcon />
 						</IconButton>
 					</Box>
 					<form
-						onSubmit={handleSubmit}
+						onSubmit={handleSubmit(onSubmit)}
 						style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}
 					>
 						<TextField
 							label='Product Title'
 							variant='outlined'
-							value={productTitle}
-							onChange={e => setProductTitle(e.target.value)}
-							required
+							error={!!errors.productTitle}
+							helperText={errors.productTitle?.message}
+							{...register('productTitle', {
+								required: 'Пожалуйста, введите название продукта',
+								minLength: { value: 3, message: 'Минимальная длина 3 символа' },
+							})}
 						/>
 						<TextField
 							label='Price'
 							type='number'
 							variant='outlined'
-							value={price}
-							onChange={e => setPrice(e.target.value)}
-							required
+							error={!!errors.price}
+							helperText={errors.price?.message}
+							{...register('price', { required: 'Пожалуйста, введите цену' })}
 						/>
-						<FormControl variant='outlined' required>
+						<FormControl variant='outlined'>
 							<InputLabel>Status</InputLabel>
 							<Select
-								value={status}
-								onChange={e => setStatus(e.target.value)}
 								label='Status'
+								defaultValue={data?.status || 'pending'}
+								{...register('status', { required: true })}
 							>
 								<MenuItem value='pending'>Ожидает оплаты</MenuItem>
 								<MenuItem value='sent'>Отправлен</MenuItem>
@@ -138,21 +161,28 @@ const OrderModal = () => {
 							label='Count'
 							type='number'
 							variant='outlined'
-							value={count}
-							onChange={e => setCount(e.target.value)}
-							required
+							error={!!errors.count}
+							helperText={errors.count?.message}
+							{...register('count', {
+								required: 'Пожалуйста, введите количества  продукта',
+								min: { value: 1, message: 'Минимальное количество 1' },
+							})}
 						/>
 						<TextField
 							label='Details'
 							variant='outlined'
 							multiline
 							rows={4}
-							value={details}
-							onChange={e => setDetails(e.target.value)}
-							required
+							{...register('details', { required: false })}
 						/>
-						<Button type='submit' variant='contained' color='primary'>
-							Submit
+						<Button
+							disabled={isLoading}
+							type='submit'
+							variant='contained'
+							color='primary'
+							sx={{ padding: '10px' }}
+						>
+							{isLoading ? <CircularProgress size={20} /> : 'Submit'}
 						</Button>
 					</form>
 				</Box>
@@ -167,4 +197,5 @@ const OrderModal = () => {
 		</div>
 	)
 }
+
 export default OrderModal

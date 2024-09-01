@@ -2,7 +2,7 @@ import { createContext, useContext, useState } from 'react'
 import { IOrders } from '../components/orderTable'
 
 interface IModalContext {
-	openModal: (data: IOrders) => void
+	openModal: (data?: IOrders) => void
 	closeModal: () => void
 	data: IOrders | null
 	open: boolean

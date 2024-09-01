@@ -1,6 +1,7 @@
 import { FilterList } from '@mui/icons-material'
 import {
 	Box,
+	Button,
 	FormControl,
 	FormControlLabel,
 	IconButton,
@@ -9,18 +10,47 @@ import {
 	RadioGroup,
 	Typography,
 } from '@mui/material'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
+import { useSearch } from '../../hooks/useSearch'
 import DatePicker from './DatePIcker'
 
 const Filter = () => {
 	const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null)
+	const [searchParams, setSearchParams] = useSearchParams()
+
 	const open = Boolean(anchorEl)
 	const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
 		setAnchorEl(event.currentTarget)
 	}
+
+	const [filters, setFilters] = useSearch({
+		status: '',
+		startDate: '',
+		endDate: '',
+	})
 	const handleClose = () => {
 		setAnchorEl(null)
 	}
+	const handleGetStatus = (e: React.ChangeEvent<HTMLInputElement>) => {
+		setFilters({
+			...filters,
+			status: e.target.value,
+		})
+	}
+
+	const handleClearFilter = () => {
+		setSearchParams({})
+		setAnchorEl(null)
+	}
+	useEffect(() => {
+		if (searchParams.get('status')) {
+			setFilters(prevFilters => ({
+				...prevFilters,
+				status: searchParams.get('status') || '',
+			}))
+		}
+	}, [searchParams])
 	return (
 		<Box>
 			<IconButton onClick={handleClick}>
@@ -44,8 +74,12 @@ const Filter = () => {
 				<Box px={'16px'} py={'6px'}>
 					<FormControl>
 						<Typography> по статусу </Typography>
-						<RadioGroup defaultValue='all' name='radio-buttons-group'>
-							<FormControlLabel value='all' control={<Radio />} label='Все' />
+						<RadioGroup
+							value={filters.status}
+							onChange={handleGetStatus}
+							name='radio-buttons-group'
+						>
+							<FormControlLabel value='' control={<Radio />} label='Все' />
 							<FormControlLabel
 								value='delivered'
 								control={<Radio />}
@@ -65,8 +99,9 @@ const Filter = () => {
 					</FormControl>
 				</Box>
 				<Box px={'16px'} py={'6px'}>
-					<DatePicker handleClose={handleClose} />
+					<DatePicker setFilters={setFilters} handleClose={handleClose} />
 				</Box>
+				<Button onClick={handleClearFilter}>Сбросить</Button>
 			</Menu>
 		</Box>
 	)

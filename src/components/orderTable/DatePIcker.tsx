@@ -6,20 +6,23 @@ import {
 	DialogContent,
 	DialogTitle,
 } from '@mui/material'
-import { DatePicker } from '@mui/x-date-pickers-pro'
+import { DatePicker as MUIDatePicker } from '@mui/x-date-pickers-pro'
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs'
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider'
 import { Dayjs } from 'dayjs'
-import { useState } from 'react'
+import { FC, memo, useState } from 'react'
 
-export default function DateRangePickerValue({
-	handleClose,
-}: {
+interface IDatePicker {
 	handleClose: () => void
-}) {
+
+	setFilters: any
+}
+
+const DatePicker: FC<IDatePicker> = ({ handleClose, setFilters }) => {
 	const [open, setOpen] = useState(false)
 	const [startDate, setStartDate] = useState<Dayjs | null>(null)
 	const [endDate, setEndDate] = useState<Dayjs | null>(null)
+	// const [_, setFilters] = useSearch({ startDate: '', endDate: '' })
 
 	const handleOpenPicker = () => {
 		setOpen(true)
@@ -28,11 +31,20 @@ export default function DateRangePickerValue({
 	const handleClosePicker = () => {
 		setOpen(false)
 	}
+
 	const handleFilterDate = () => {
-		console.log(startDate?.format('MM-DD-YYYY'), endDate?.format('MM-DD-YYYY'))
+		const start = startDate?.format('MM-DD-YYYY')
+		const end = endDate?.format('MM-DD-YYYY')
+		console.log(start, end)
+		setFilters((initials: any) => ({
+			...initials,
+			startDate: start,
+			endDate: end,
+		}))
 		handleClose()
 		handleClosePicker()
 	}
+
 	return (
 		<div>
 			<span
@@ -46,12 +58,14 @@ export default function DateRangePickerValue({
 					<DialogTitle>Диапазон дат</DialogTitle>
 					<DialogContent>
 						<Box display={'flex'} gap={'5px'} padding={'10px'}>
-							<DatePicker
+							<MUIDatePicker
 								label='Начальная дата'
+								value={startDate}
 								onChange={(value: Dayjs | null) => setStartDate(value)}
 							/>
-							<DatePicker
+							<MUIDatePicker
 								label={'Конечная дата'}
+								value={endDate}
 								onChange={(value: Dayjs | null) => setEndDate(value)}
 							/>
 						</Box>
@@ -69,3 +83,4 @@ export default function DateRangePickerValue({
 		</div>
 	)
 }
+export default memo(DatePicker)
