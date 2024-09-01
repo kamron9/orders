@@ -2,7 +2,9 @@ import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react'
 
 export const orderApi = createApi({
 	reducerPath: 'orderApi',
-	baseQuery: fetchBaseQuery({ baseUrl: 'http://localhost:5000/api' }), // Sizning backend URL
+	baseQuery: fetchBaseQuery({
+		baseUrl: 'https://orders-backend.vercel.app/api',
+	}),
 	tagTypes: ['Order'],
 	endpoints: builder => ({
 		getOrders: builder.query({
