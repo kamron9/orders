@@ -1,10 +1,11 @@
-import { Button, Snackbar } from '@mui/material'
+import { Button } from '@mui/material'
 import Backdrop from '@mui/material/Backdrop'
 import Box from '@mui/material/Box'
 import Fade from '@mui/material/Fade'
 import Modal from '@mui/material/Modal'
 import Typography from '@mui/material/Typography'
-import { FC, memo, useState } from 'react'
+import { FC, memo } from 'react'
+import { useSnackbar } from '../context/SnackbarProvider'
 import { useDeleteOrderMutation } from '../service/apiSlice'
 
 const style = {
@@ -29,20 +30,16 @@ const RemoveOrderModal: FC<IRemoveOrderModal> = ({
 	id,
 	children,
 }) => {
-	const [deleteOrder] = useDeleteOrderMutation()
-	const [openSnackBar, setOpenSnackBar] = useState(false)
-
-	const handleCloseSnackBar = () => {
-		setOpenSnackBar(false)
-	}
+	const [deleteOrder, { isLoading }] = useDeleteOrderMutation()
+	const { handleOpen } = useSnackbar()
 
 	const handleDeleteData = async () => {
 		try {
 			await deleteOrder(id).unwrap()
 			handleClose()
-			setOpenSnackBar(true)
-		} catch (error) {
-			console.error(error)
+			handleOpen('Заказ успешно удален', 'warning')
+		} catch (error: any) {
+			handleOpen(error?.message, 'error')
 		}
 	}
 
@@ -72,6 +69,7 @@ const RemoveOrderModal: FC<IRemoveOrderModal> = ({
 								variant='contained'
 								color='error'
 								onClick={handleDeleteData}
+								disabled={isLoading}
 							>
 								Удалить
 							</Button>
@@ -80,12 +78,6 @@ const RemoveOrderModal: FC<IRemoveOrderModal> = ({
 					</Box>
 				</Fade>
 			</Modal>
-			<Snackbar
-				open={openSnackBar}
-				autoHideDuration={4000}
-				message={'Заказ удален'}
-				onClose={handleCloseSnackBar}
-			/>
 		</div>
 	)
 }

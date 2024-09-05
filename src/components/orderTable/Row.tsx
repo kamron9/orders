@@ -14,20 +14,9 @@ import {
 import { useState } from 'react'
 import { IOrders } from '.'
 import { useModal } from '../../context/ModalProvider'
+import { Istatus } from '../../types'
 import { formatDate } from '../../utils/formatDate'
 import RemoveOrderModal from '../RemovOrderModal'
-
-interface Istatus {
-	text: string
-	chip:
-		| 'default'
-		| 'warning'
-		| 'success'
-		| 'error'
-		| 'primary'
-		| 'secondary'
-		| 'info'
-}
 
 const Row = ({ row }: { row: IOrders }) => {
 	const [openRow, setOpenRow] = useState<boolean>(false)
@@ -49,8 +38,6 @@ const Row = ({ row }: { row: IOrders }) => {
 				return { text: 'неизвестно', chip: 'default' }
 		}
 	}
-
-	
 
 	const handleOpen = () => {
 		setOpenRemoveModal(true)

@@ -6,15 +6,15 @@ import {
 	InputLabel,
 	MenuItem,
 	Select,
-	Snackbar,
 	TextField,
 } from '@mui/material'
 import Box from '@mui/material/Box'
 import Button from '@mui/material/Button'
 import Modal from '@mui/material/Modal'
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import { SubmitHandler, useForm } from 'react-hook-form'
 import { useModal } from '../context/ModalProvider'
+import { useSnackbar } from '../context/SnackbarProvider'
 import {
 	useAddOrderMutation,
 	useUpdateOrderMutation,
@@ -42,9 +42,8 @@ interface Inputs {
 const OrderModal = () => {
 	const { open, closeModal, data } = useModal()
 	const [addOrder, { isLoading }] = useAddOrderMutation()
-	const [openSnackBar, setOpenSnackBar] = useState(false)
-	const [message, setMessage] = useState('')
-	const [updateOrder] = useUpdateOrderMutation()
+	const [updateOrder, { isLoading: onLoading }] = useUpdateOrderMutation()
+	const { handleOpen } = useSnackbar()
 
 	const {
 		register,
@@ -61,11 +60,6 @@ const OrderModal = () => {
 		},
 	})
 
-	const handleCloseSnackBar = () => {
-		setOpenSnackBar(false)
-		setMessage('')
-	}
-
 	const onSubmit: SubmitHandler<Inputs> = async values => {
 		try {
 			if (data?._id) {
@@ -77,7 +71,7 @@ const OrderModal = () => {
 					count: +values.count,
 					details: values.details,
 				}).unwrap()
-				setMessage('Заказ успешно изменен')
+				handleOpen('Заказ успешно изменен', 'success')
 			} else {
 				await addOrder({
 					productTitle: values.productTitle,
@@ -86,14 +80,13 @@ const OrderModal = () => {
 					count: +values.count,
 					details: values.details,
 				}).unwrap()
-				setMessage('Заказ добавлен')
+				handleOpen('Заказ добавлен', 'success')
 			}
-			setOpenSnackBar(true)
+
 			closeModal()
 			reset()
 		} catch (error: any) {
-			setMessage(error.message || 'Ошибка')
-			setOpenSnackBar(true)
+			handleOpen('something went wrong', 'error')
 		}
 	}
 
@@ -176,7 +169,7 @@ const OrderModal = () => {
 							{...register('details', { required: false })}
 						/>
 						<Button
-							disabled={isLoading}
+							disabled={isLoading || onLoading}
 							type='submit'
 							variant='contained'
 							color='primary'
@@ -187,13 +180,6 @@ const OrderModal = () => {
 					</form>
 				</Box>
 			</Modal>
-			<Snackbar
-				open={openSnackBar}
-				autoHideDuration={4000}
-				message={message}
-				onClose={handleCloseSnackBar}
-				anchorOrigin={{ horizontal: 'center', vertical: 'top' }}
-			/>
 		</div>
 	)
 }
